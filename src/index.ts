@@ -7,6 +7,17 @@ import swaggerUi from '@fastify/swagger-ui';
 import { config } from './config';
 import extractRoutes from './routes/extract';
 
+declare module 'fastify' {
+  interface FastifyRequest {
+    extractContext: {
+      fileSizeBytes: number;
+      totalItems: number;
+      inputTokens: number;
+      outputTokens: number;
+    } | null;
+  }
+}
+
 const fastify = Fastify({
   logger: {
     level: 'info',
@@ -22,7 +33,9 @@ const fastify = Fastify({
   },
 });
 
-// cors → rate-limit → multipart → swagger → swagger-ui → routes → error handler
+fastify.decorateRequest('extractContext', null);
+
+// cors → rate-limit → multipart → swagger → swagger-ui → routes → hook → error handler
 fastify.register(cors, { origin: '*' });
 
 fastify.register(rateLimit, {
@@ -49,6 +62,22 @@ fastify.register(swagger, {
 fastify.register(swaggerUi, { routePrefix: '/documentation' });
 
 fastify.register(extractRoutes);
+
+fastify.addHook('onResponse', (request, reply, done) => {
+  const ctx = request.extractContext;
+  request.log.info({
+    ip: request.ip,
+    method: request.method,
+    url: request.url,
+    statusCode: reply.statusCode,
+    processingTimeMs: Math.round(reply.elapsedTime),
+    fileSizeBytes: ctx?.fileSizeBytes ?? 0,
+    totalItems: ctx?.totalItems ?? 0,
+    inputTokens: ctx?.inputTokens ?? 0,
+    outputTokens: ctx?.outputTokens ?? 0,
+  }, 'request completed');
+  done();
+});
 
 fastify.setErrorHandler((error, _request, reply) => {
   const err = error as FastifyError;
