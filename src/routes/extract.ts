@@ -1,5 +1,9 @@
 import { FastifyInstance } from 'fastify';
 import { validateImage } from '../middleware/image-validator';
+import { extract } from '../services/ai-client';
+import { format, FormatType } from '../services/formatter';
+
+const VALID_FORMATS: FormatType[] = ['asterisk', 'checklist'];
 
 export default async function extractRoutes(fastify: FastifyInstance) {
   fastify.post('/extract', {
@@ -7,7 +11,6 @@ export default async function extractRoutes(fastify: FastifyInstance) {
       consumes: ['multipart/form-data'],
       body: {
         type: 'object',
-        required: ['image'],
         properties: {
           image: { type: 'string', format: 'binary', description: 'Receipt image (JPEG, PNG, WEBP, max 10 MB)' },
         },
@@ -50,7 +53,28 @@ export default async function extractRoutes(fastify: FastifyInstance) {
     },
   }, async (request, _reply) => {
     const file = await request.file();
-    await validateImage(file);
-    return { success: true, text: '', items: [], total_items: 0 };
+    const { buffer, mimeType } = await validateImage(file);
+
+    const rawFormat = (request.query as { format?: string }).format ?? 'asterisk';
+    const formatType: FormatType = VALID_FORMATS.includes(rawFormat as FormatType)
+      ? (rawFormat as FormatType)
+      : 'asterisk';
+
+    const { items, inputTokens, outputTokens } = await extract(buffer, mimeType);
+    const text = format(items, formatType);
+
+    (request as typeof request & { extractContext: object }).extractContext = {
+      fileSizeBytes: buffer.length,
+      totalItems: items.length,
+      inputTokens,
+      outputTokens,
+    };
+
+    return {
+      success: true as const,
+      text,
+      items,
+      total_items: items.length,
+    };
   });
 }
