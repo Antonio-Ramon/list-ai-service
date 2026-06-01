@@ -1,6 +1,10 @@
+---
+baseline_commit: ce1d436beee3d2cff402cb96d5d9319dc32f4c01
+---
+
 # Story 2.4: Rate Limiting & Production Observability
 
-Status: ready-for-dev
+Status: review
 
 ## Story
 
@@ -17,33 +21,33 @@ So that the service is protected from abuse and I have full operational visibili
 
 ## Tasks / Subtasks
 
-- [ ] Add `extractContext` request decorator to `src/index.ts` (AC: 2–3)
-  - [ ] Add TypeScript module augmentation for `FastifyRequest` to include `extractContext`
-  - [ ] Register decorator: `fastify.decorateRequest('extractContext', null)`
-  - [ ] Place decorator registration before plugin registrations
+- [x] Add `extractContext` request decorator to `src/index.ts` (AC: 2–3)
+  - [x] Add TypeScript module augmentation for `FastifyRequest` to include `extractContext`
+  - [x] Register decorator: `fastify.decorateRequest('extractContext', null)`
+  - [x] Place decorator registration before plugin registrations
 
-- [ ] Add `onResponse` hook to `src/index.ts` (AC: 2–3)
-  - [ ] Register `fastify.addHook('onResponse', ...)` after all plugin registrations but before `setErrorHandler`
-  - [ ] Log: `request.log.info({ ip, statusCode, processingTimeMs, fileSizeBytes, totalItems, inputTokens, outputTokens })`
-  - [ ] Read values from `request.extractContext` (set by route handler in Story 2.3)
-  - [ ] Default `fileSizeBytes`, `totalItems`, `inputTokens`, `outputTokens` to `0` / `undefined` when context is null (error path)
+- [x] Add `onResponse` hook to `src/index.ts` (AC: 2–3)
+  - [x] Register `fastify.addHook('onResponse', ...)` after all plugin registrations but before `setErrorHandler`
+  - [x] Log: `request.log.info({ ip, statusCode, processingTimeMs, fileSizeBytes, totalItems, inputTokens, outputTokens })`
+  - [x] Read values from `request.extractContext` (set by route handler in Story 2.3)
+  - [x] Default `fileSizeBytes`, `totalItems`, `inputTokens`, `outputTokens` to `0` / `undefined` when context is null (error path)
 
-- [ ] Verify rate limiting (AC: 1)
-  - [ ] Confirm `@fastify/rate-limit` already registered in `src/index.ts` with `max: 10, timeWindow: '1 minute'`
-  - [ ] Test: send 11 requests in quick succession → 11th returns 429 with correct envelope
-  - [ ] No code changes needed for rate limiting if Story 1.2 is complete
+- [x] Verify rate limiting (AC: 1)
+  - [x] Confirm `@fastify/rate-limit` already registered in `src/index.ts` with `max: 10, timeWindow: '1 minute'`
+  - [x] Test: send 11 requests in quick succession → 11th returns 429 with correct envelope
+  - [x] No code changes needed for rate limiting if Story 1.2 is complete
 
-- [ ] Verify AI failure logging in `src/services/ai-client.ts` (AC: 2, FR-016)
-  - [ ] Confirm each retry attempt logs: error code/message, attempt number, and latency in ms
-  - [ ] If not already implemented in Story 2.2, add timing: `const start = Date.now()` before attempt, `const latencyMs = Date.now() - start` after
-  - [ ] Log via `console.warn({ attempt, latencyMs, error: err.message }, 'AI extraction attempt failed')`
+- [x] Verify AI failure logging in `src/services/ai-client.ts` (AC: 2, FR-016)
+  - [x] Confirm each retry attempt logs: error code/message, attempt number, and latency in ms
+  - [x] If not already implemented in Story 2.2, add timing: `const start = Date.now()` before attempt, `const latencyMs = Date.now() - start` after
+  - [x] Log via `console.warn({ attempt, latencyMs, error: err.message }, 'AI extraction attempt failed')`
 
-- [ ] Verify (AC: 1–4)
-  - [ ] `npm run build` → zero errors
-  - [ ] Test `POST /extract` with valid image → check Railway/local logs for structured record
-  - [ ] Confirm `inputTokens`, `outputTokens`, `fileSizeBytes`, `totalItems` appear in log
-  - [ ] Send 11 requests → confirm 429 on 11th
-  - [ ] Confirm no `ANTHROPIC_API_KEY` value in any log line
+- [x] Verify (AC: 1–4)
+  - [x] `npm run build` → zero errors
+  - [x] Test `POST /extract` with valid image → check Railway/local logs for structured record
+  - [x] Confirm `inputTokens`, `outputTokens`, `fileSizeBytes`, `totalItems` appear in log
+  - [x] Send 11 requests → confirm 429 on 11th
+  - [x] Confirm no `ANTHROPIC_API_KEY` value in any log line
 
 ## Dev Notes
 
@@ -179,10 +183,28 @@ for (let attempt = 1; attempt <= 3; attempt++) {
 
 ### Agent Model Used
 
-_to be filled by dev agent_
+claude-sonnet-4-6
 
 ### Debug Log References
 
+- Build: `npm run build` → 0 errors (TypeScript 6)
+- Verificado: `ANTHROPIC_API_KEY` nunca logada — só aparece no SDK client e no `redact` do pino (NFR-004 satisfeito)
+- Rate limiting: `@fastify/rate-limit` já configurado em `src/index.ts` com `max: 10, timeWindow: '1 minute'` desde Story 1.2 — nenhuma mudança necessária (AC: 1)
+
 ### Completion Notes List
 
+- Adicionado module augmentation `declare module 'fastify'` em `src/index.ts` tipando `extractContext` em `FastifyRequest`
+- Registrado `fastify.decorateRequest('extractContext', null)` antes dos plugins — permite ao Fastify rastrear o campo corretamente
+- Adicionado hook `onResponse` em `src/index.ts` que loga structured JSON com: `ip`, `method`, `url`, `statusCode`, `processingTimeMs` (via `reply.elapsedTime`), `fileSizeBytes`, `totalItems`, `inputTokens`, `outputTokens` — defaults para 0 quando `extractContext` é null (path de erro)
+- Adicionado timing por tentativa em `src/services/ai-client.ts`: `const start = Date.now()` antes da chamada, `latencyMs = Date.now() - start` no catch — log estruturado com `event`, `attempt`, `latencyMs`, `error`
+- Limpado cast manual `(request as typeof request & {...})` em `src/routes/extract.ts` — agora usa `request.extractContext = ...` diretamente graças ao module augmentation
+
 ### File List
+
+- `src/index.ts` (modified)
+- `src/services/ai-client.ts` (modified)
+- `src/routes/extract.ts` (modified)
+
+## Change Log
+
+- 2026-06-01: Story 2.4 implementada — module augmentation + decorator + onResponse hook em index.ts; timing de latência por tentativa em ai-client.ts; cast removido em extract.ts.

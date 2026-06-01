@@ -54,5 +54,5 @@ development_status:
   2-1-image-upload-validation: review
   2-2-ai-extraction-service: review
   2-3-response-formatting-full-contract: review
-  2-4-rate-limiting-production-observability: ready-for-dev
+  2-4-rate-limiting-production-observability: review
   epic-2-retrospective: optional
