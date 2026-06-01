@@ -35,7 +35,9 @@ fastify.register(rateLimit, {
   }),
 });
 
-fastify.register(multipart);
+fastify.register(multipart, {
+  limits: { fileSize: config.maxFileSizeMb * 1024 * 1024 },
+});
 
 fastify.register(swagger, {
   openapi: {
