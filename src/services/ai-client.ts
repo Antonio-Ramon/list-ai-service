@@ -29,6 +29,7 @@ export async function extract(buffer: Buffer, mimeType: string): Promise<Extract
   let lastError: Error = new Error('Unknown error');
 
   for (let attempt = 1; attempt <= 3; attempt++) {
+    const start = Date.now();
     try {
       const response = await client.messages.create({
         model: 'claude-haiku-4-5-20251001',
@@ -78,8 +79,14 @@ export async function extract(buffer: Buffer, mimeType: string): Promise<Extract
       };
     } catch (err) {
       if (err instanceof NoItemsFoundError) throw err;
+      const latencyMs = Date.now() - start;
       lastError = err as Error;
-      console.warn(`[ai-client] Attempt ${attempt} failed: ${lastError.message}`);
+      console.warn(JSON.stringify({
+        event: 'ai_extraction_failed',
+        attempt,
+        latencyMs,
+        error: lastError.message,
+      }));
     }
   }
 
