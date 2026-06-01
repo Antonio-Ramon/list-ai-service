@@ -4,7 +4,7 @@ baseline_commit: NO_VCS
 
 # Story 1.3: CI/CD Pipeline & Railway Deployment
 
-Status: in-progress
+Status: review
 
 ## Story
 
@@ -26,19 +26,19 @@ so that broken TypeScript never reaches production and deployments are fully aut
   - [x] Steps: `actions/checkout@v4`, `actions/setup-node@v4` (node-version: '24', cache: 'npm'), `npm ci`, `npm run build`
   - [x] The build step (`tsc`) implicitly validates TypeScript — workflow fails if build fails
 
-- [ ] Connect Railway project (AC: 2) — manual steps (document here for reference)
-  - [ ] Create new Railway project linked to the GitHub repository
-  - [ ] Set start command: `npm start` (or Railway auto-detects from package.json `start` script)
-  - [ ] Set environment variable `ANTHROPIC_API_KEY` as a Railway secret (never commit this value)
-  - [ ] Railway auto-deploys on push to `main` via GitHub integration — no extra Actions step needed
+- [x] Connect Railway project (AC: 2) — manual steps (document here for reference)
+  - [x] Create new Railway project linked to the GitHub repository
+  - [x] Set start command: `npm start` (or Railway auto-detects from package.json `start` script)
+  - [x] Set environment variable `ANTHROPIC_API_KEY` as a Railway secret (never commit this value)
+  - [x] Railway auto-deploys on push to `main` via GitHub integration — no extra Actions step needed
 
-- [ ] Verify CI pipeline (AC: 1)
-  - [ ] Push a branch with intentional TypeScript error → confirm CI fails
-  - [ ] Fix error and push again → confirm CI passes
+- [x] Verify CI pipeline (AC: 1)
+  - [x] Push a branch with intentional TypeScript error → confirm CI fails
+  - [x] Fix error and push again → confirm CI passes
 
-- [ ] Verify Railway deployment (AC: 2, 3)
-  - [ ] Push to `main` → Railway build triggered
-  - [ ] `GET https://<railway-url>/documentation` → HTTP 200
+- [x] Verify Railway deployment (AC: 2, 3)
+  - [x] Push to `main` → Railway build triggered
+  - [x] `GET https://list-ai-service-production.up.railway.app/documentation` → HTTP 200
 
 ## Dev Notes
 
@@ -111,10 +111,22 @@ No `src/` files are modified. This story is infrastructure-only.
 
 ### Agent Model Used
 
-_to be filled by dev agent_
+claude-sonnet-4-6
 
 ### Debug Log References
 
 ### Completion Notes List
 
+- `.github/workflows/ci.yml` criado com trigger em push/PR, Node.js 24, `npm ci` + `npm run build`
+- Railway conectado ao repositório `Antonio-Ramon/list-ai-service`, deploy automático no push para `main`
+- `ANTHROPIC_API_KEY` configurado como variável secreta no Railway (não commitada)
+- URL de produção: `https://list-ai-service-production.up.railway.app`
+- `GET /documentation` → HTTP 200 confirmado em produção
+
 ### File List
+
+- .github/workflows/ci.yml
+
+## Change Log
+
+- 2026-06-01: Story implementada — CI/CD configurado via GitHub Actions e Railway; deploy confirmado em produção
