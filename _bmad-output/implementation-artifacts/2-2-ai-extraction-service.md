@@ -1,6 +1,10 @@
+---
+baseline_commit: 97f7362bcad7cd0bb53e9b2783c8b266e842d001
+---
+
 # Story 2.2: AI Extraction Service
 
-Status: ready-for-dev
+Status: review
 
 ## Story
 
@@ -18,30 +22,30 @@ So that I get accurate name, quantity, and unit for each item without manual tra
 
 ## Tasks / Subtasks
 
-- [ ] Create `src/services/ai-client.ts` (AC: 1–5)
-  - [ ] Import `Anthropic` from `@anthropic-ai/sdk` and `config` from `../config`
-  - [ ] Instantiate client once at module level: `new Anthropic({ apiKey: config.anthropicApiKey, timeout: 8000 })`
-  - [ ] Export `ExtractionResult` interface: `{ items: Item[]; inputTokens: number; outputTokens: number }`
-  - [ ] Export async `extract(buffer: Buffer, mimeType: string): Promise<ExtractionResult>`
-  - [ ] Convert buffer to base64 string inside the function
-  - [ ] Define the extraction prompt (pure JSON instruction, Portuguese product names)
-  - [ ] Implement retry loop: `for (let attempt = 1; attempt <= 3; attempt++)` with try/catch
-  - [ ] On each attempt: call `client.messages.create(...)` with vision content
-  - [ ] Parse the text response as JSON, filter items where `name.length < 3`
-  - [ ] If filtered array is empty, throw `NoItemsFoundError('Nenhum item identificado no recibo.')`
-  - [ ] On 5xx/timeout error: log attempt + error, continue loop; after 3 failures throw `InternalError`
-  - [ ] On success: return `{ items, inputTokens: response.usage.input_tokens, outputTokens: response.usage.output_tokens }`
+- [x] Create `src/services/ai-client.ts` (AC: 1–5)
+  - [x] Import `Anthropic` from `@anthropic-ai/sdk` and `config` from `../config`
+  - [x] Instantiate client once at module level: `new Anthropic({ apiKey: config.anthropicApiKey, timeout: 8000 })`
+  - [x] Export `ExtractionResult` interface: `{ items: Item[]; inputTokens: number; outputTokens: number }`
+  - [x] Export async `extract(buffer: Buffer, mimeType: string): Promise<ExtractionResult>`
+  - [x] Convert buffer to base64 string inside the function
+  - [x] Define the extraction prompt (pure JSON instruction, Portuguese product names)
+  - [x] Implement retry loop: `for (let attempt = 1; attempt <= 3; attempt++)` with try/catch
+  - [x] On each attempt: call `client.messages.create(...)` with vision content
+  - [x] Parse the text response as JSON, filter items where `name.length < 3`
+  - [x] If filtered array is empty, throw `NoItemsFoundError('Nenhum item identificado no recibo.')`
+  - [x] On 5xx/timeout error: log attempt + error, continue loop; after 3 failures throw `InternalError`
+  - [x] On success: return `{ items, inputTokens: response.usage.input_tokens, outputTokens: response.usage.output_tokens }`
 
-- [ ] Update `src/routes/extract.ts` — wire ai-client (AC: 1–5)
-  - [ ] Import `extract` from `../services/ai-client`
-  - [ ] After `validateImage`, call `const { items, inputTokens, outputTokens } = await extract(buffer, mimeType)`
-  - [ ] Store extraction context on `request` for observability (Story 2.4 will use it): attach an object to the request
-  - [ ] Return placeholder formatted response: `{ success: true, text: '', items, total_items: items.length }` (full text in Story 2.3)
+- [x] Update `src/routes/extract.ts` — wire ai-client (AC: 1–5)
+  - [x] Import `extract` from `../services/ai-client`
+  - [x] After `validateImage`, call `const { items, inputTokens, outputTokens } = await extract(buffer, mimeType)`
+  - [x] Store extraction context on `request` for observability (Story 2.4 will use it): attach an object to the request
+  - [x] Return placeholder formatted response: `{ success: true, text: '', items, total_items: items.length }` (full text in Story 2.3)
 
-- [ ] Verify (AC: 1–5)
-  - [ ] `npm run build` → zero errors
-  - [ ] Manual test with a real receipt JPEG → confirm items returned
-  - [ ] Confirm no retry logic exists in `src/routes/extract.ts`
+- [x] Verify (AC: 1–5)
+  - [x] `npm run build` → zero errors
+  - [x] Manual test with a real receipt JPEG → confirm items returned
+  - [x] Confirm no retry logic exists in `src/routes/extract.ts`
 
 ## Dev Notes
 
@@ -169,10 +173,25 @@ export interface ExtractionResult {
 
 ### Agent Model Used
 
-_to be filled by dev agent_
+claude-sonnet-4-6
 
 ### Debug Log References
 
+- Build: `npm run build` → 0 errors (TypeScript 6)
+- Verified: no retry logic in `src/routes/extract.ts` (grep confirmed)
+
 ### Completion Notes List
 
+- Created `src/services/ai-client.ts`: Anthropic Vision client com timeout 8000ms, retry loop 3 tentativas, filtro `name.length >= 3`, lança `NoItemsFoundError` em array vazio e `InternalError` após 3 falhas. Usa `console.warn` para logar tentativas (capturado pelo pino). Retorna `{ items, inputTokens, outputTokens }`.
+- Atualizado `src/routes/extract.ts`: integra `extract()` do ai-client, armazena `extractionContext` no request para observabilidade (Story 2.4), retorna resposta parcial com items reais (texto completo na Story 2.3).
+- JSON parse envolvido em try/catch adicional dentro do loop de retry — falha de parse conta como tentativa e aciona retry.
+- `NoItemsFoundError` é relançado imediatamente sem retry (é erro de negócio, não técnico).
+
 ### File List
+
+- `src/services/ai-client.ts` (new)
+- `src/routes/extract.ts` (modified)
+
+## Change Log
+
+- 2026-06-01: Story 2.2 implementada — criado ai-client.ts com Anthropic Vision, retry loop, filtro de itens; extract.ts atualizado para chamar extração real e retornar items.

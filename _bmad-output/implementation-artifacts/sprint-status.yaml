@@ -52,7 +52,7 @@ development_status:
   # ── Epic 2: Receipt Extraction API ──────────────────────────────────────────
   epic-2: in-progress
   2-1-image-upload-validation: review
-  2-2-ai-extraction-service: ready-for-dev
-  2-3-response-formatting-full-contract: ready-for-dev
+  2-2-ai-extraction-service: review
+  2-3-response-formatting-full-contract: review
   2-4-rate-limiting-production-observability: ready-for-dev
   epic-2-retrospective: optional

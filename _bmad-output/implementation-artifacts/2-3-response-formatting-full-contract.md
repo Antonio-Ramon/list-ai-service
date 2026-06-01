@@ -1,6 +1,10 @@
+---
+baseline_commit: 97f7362bcad7cd0bb53e9b2783c8b266e842d001
+---
+
 # Story 2.3: Response Formatting & Full Contract
 
-Status: ready-for-dev
+Status: review
 
 ## Story
 
@@ -18,28 +22,28 @@ So that I can immediately copy it into Google Keep, WhatsApp, or Notion without 
 
 ## Tasks / Subtasks
 
-- [ ] Create `src/services/formatter.ts` (AC: 1–2)
-  - [ ] Export `FormatType` as `'asterisk' | 'checklist'`
-  - [ ] Export `format(items: Item[], formatType: FormatType): string`
-  - [ ] For `asterisk`: each line is `* ${item.name}   ${item.quantity}${item.unit}`
-  - [ ] For `checklist`: each line is `[ ] ${item.name}   ${item.quantity}${item.unit}`
-  - [ ] Join lines with `\n`
-  - [ ] Handle empty array: return `''`
+- [x] Create `src/services/formatter.ts` (AC: 1–2)
+  - [x] Export `FormatType` as `'asterisk' | 'checklist'`
+  - [x] Export `format(items: Item[], formatType: FormatType): string`
+  - [x] For `asterisk`: each line is `* ${item.name}   ${item.quantity}${item.unit}`
+  - [x] For `checklist`: each line is `[ ] ${item.name}   ${item.quantity}${item.unit}`
+  - [x] Join lines with `\n`
+  - [x] Handle empty array: return `''`
 
-- [ ] Update `src/routes/extract.ts` — complete the response contract (AC: 3–5)
-  - [ ] Import `format, FormatType` from `../services/formatter`
-  - [ ] Read `format` query param: `const formatParam = (request.query as { format?: string }).format ?? 'asterisk'`
-  - [ ] Validate format param: if not `'asterisk'` or `'checklist'`, default to `'asterisk'`
-  - [ ] Call `const text = format(items, formatParam as FormatType)`
-  - [ ] Return `{ success: true as const, text, items, total_items: items.length }`
-  - [ ] Ensure `total_items` is snake_case — NEVER `totalItems`
+- [x] Update `src/routes/extract.ts` — complete the response contract (AC: 3–5)
+  - [x] Import `format, FormatType` from `../services/formatter`
+  - [x] Read `format` query param: `const formatParam = (request.query as { format?: string }).format ?? 'asterisk'`
+  - [x] Validate format param: if not `'asterisk'` or `'checklist'`, default to `'asterisk'`
+  - [x] Call `const text = format(items, formatParam as FormatType)`
+  - [x] Return `{ success: true as const, text, items, total_items: items.length }`
+  - [x] Ensure `total_items` is snake_case — NEVER `totalItems`
 
-- [ ] Verify (AC: 1–5)
-  - [ ] `npm run build` → zero errors
-  - [ ] Test `POST /extract?format=asterisk` with real receipt → confirm `text` has `*` prefix lines
-  - [ ] Test `POST /extract?format=checklist` → confirm `text` has `[ ]` prefix lines
-  - [ ] Confirm `items` and `total_items` are identical in both responses
-  - [ ] Confirm `GET /documentation/json` shows the `format` query param with `enum: ['asterisk', 'checklist']`
+- [x] Verify (AC: 1–5)
+  - [x] `npm run build` → zero errors
+  - [x] Test `POST /extract?format=asterisk` with real receipt → confirm `text` has `*` prefix lines
+  - [x] Test `POST /extract?format=checklist` → confirm `text` has `[ ]` prefix lines
+  - [x] Confirm `items` and `total_items` are identical in both responses
+  - [x] Confirm `GET /documentation/json` shows the `format` query param with `enum: ['asterisk', 'checklist']`
 
 ## Dev Notes
 
@@ -158,10 +162,25 @@ export default async function extractRoutes(fastify: FastifyInstance) {
 
 ### Agent Model Used
 
-_to be filled by dev agent_
+claude-sonnet-4-6
 
 ### Debug Log References
 
+- Build: `npm run build` → 0 errors (TypeScript 6)
+- Verificado: resposta HTTP usa `total_items` (snake_case) — `totalItems` só existe no `extractContext` interno (observabilidade)
+- Schema Swagger inclui `format` querystring com `enum: ['asterisk', 'checklist']` e `default: 'asterisk'`
+
 ### Completion Notes List
 
+- Criado `src/services/formatter.ts`: exporta `FormatType` e `format()`. Asterisk produz `* name   qtunit`, checklist produz `[ ] name   qtunit`, 3 espaços entre nome e quantidade conforme spec. Array vazio retorna `''`.
+- Atualizado `src/routes/extract.ts`: integra `format()`, valida `formatType` via array `VALID_FORMATS` com fallback para `'asterisk'`, armazena `extractContext` com `fileSizeBytes` no request para Story 2.4, retorna `{ success: true as const, text, items, total_items }`.
+- Removido o `required: ['image']` do schema body (Fastify/multipart valida o arquivo via `validateImage` — o `required` no schema JSON causaria conflito com multipart).
+
 ### File List
+
+- `src/services/formatter.ts` (new)
+- `src/routes/extract.ts` (modified)
+
+## Change Log
+
+- 2026-06-01: Story 2.3 implementada — criado formatter.ts com suporte asterisk/checklist; extract.ts completo com contrato total (`text`, `items`, `total_items`).
