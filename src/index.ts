@@ -31,6 +31,7 @@ const fastify = Fastify({
     },
     redact: ['req.headers.authorization'],
   },
+  disableRequestLogging: true,
 });
 
 fastify.decorateRequest('extractContext', null);
