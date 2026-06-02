@@ -55,7 +55,10 @@ fastify.register(multipart, {
 fastify.register(swagger, {
   openapi: {
     info: { title: 'ListAI API', version: '1.0.0' },
-    servers: [{ url: 'http://localhost:3000' }],
+    servers: [
+      { url: 'https://list-ai-service-production.up.railway.app' },
+      { url: 'http://localhost:3000' },
+    ],
   },
 });
 
