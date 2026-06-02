@@ -5,5 +5,4 @@ node_modules/
 _bmad-*
 _bmad
 
-.agents
-.claude
+.*
