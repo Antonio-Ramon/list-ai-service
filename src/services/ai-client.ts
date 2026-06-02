@@ -25,6 +25,13 @@ export interface ExtractionResult {
   outputTokens: number;
 }
 
+// Modelos às vezes ignoram a instrução e envolvem o JSON em ```json ... ```.
+// Remove a cerca de markdown antes do parse.
+function stripCodeFences(text: string): string {
+  const fenced = text.match(/^```(?:json)?\s*([\s\S]*?)\s*```$/);
+  return fenced ? fenced[1].trim() : text;
+}
+
 export async function extract(buffer: Buffer, mimeType: string): Promise<ExtractionResult> {
   let lastError: Error = new Error('Unknown error');
   const base64 = buffer.toString('base64');
@@ -34,7 +41,7 @@ export async function extract(buffer: Buffer, mimeType: string): Promise<Extract
     try {
       const response = await client.messages.create({
         model: 'claude-haiku-4-5-20251001',
-        max_tokens: 1024,
+        max_tokens: 4096,
         messages: [
           {
             role: 'user',
@@ -57,7 +64,8 @@ export async function extract(buffer: Buffer, mimeType: string): Promise<Extract
       });
 
       const firstBlock = response.content[0];
-      const text = firstBlock?.type === 'text' ? firstBlock.text.trim() : '[]';
+      const rawText = firstBlock?.type === 'text' ? firstBlock.text.trim() : '[]';
+      const text = stripCodeFences(rawText);
 
       let raw: unknown;
       try {
