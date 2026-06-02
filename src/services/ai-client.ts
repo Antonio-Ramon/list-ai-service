@@ -16,7 +16,7 @@ Retorne EXCLUSIVAMENTE um array JSON válido neste formato, sem markdown, sem te
 [{"name":"nome do produto","quantity":1,"unit":"un"}]
 
 Regras:
-- name: nome limpo em português (sem código, sem preço)
+- name: nome completo e legível em português — expanda abreviações típicas de recibo de supermercado (ex: "Ouu" → "Ovos", "Feij" → "Feijão", "Arr" → "Arroz", "Leit" → "Leite", "Sab" → "Sabonete", "Det" → "Detergente"); preserve marca e especificações visíveis (tamanho, peso, cor); não invente dados que não estejam no recibo
 - quantity: número (use ponto para decimal, ex: 1.5)
 - unit: unidade de medida (un, kg, g, L, ml, cx, pct, dz)
 - Se não encontrar itens, retorne: []`;
