@@ -2,6 +2,7 @@ import Anthropic from '@anthropic-ai/sdk';
 import { config } from '../config';
 import { Item } from '../types';
 import { InternalError, NoItemsFoundError } from '../errors';
+import { normalizeItems } from './normalizer';
 
 const MODEL = 'claude-haiku-4-5-20251001';
 
@@ -103,11 +104,13 @@ export async function extract(buffer: Buffer, mimeType: string, log: Logger): Pr
         throw new NoItemsFoundError('Nenhum item identificado no recibo.');
       }
 
+      const normalizedItems = normalizeItems(items);
+
       log.info(
         {
           tentativa: attempt,
           ms,
-          itensExtraidos: items.length,
+          itensExtraidos: normalizedItems.length,
           tokensEntrada: response.usage.input_tokens,
           tokensSaida: response.usage.output_tokens,
         },
@@ -115,7 +118,7 @@ export async function extract(buffer: Buffer, mimeType: string, log: Logger): Pr
       );
 
       return {
-        items,
+        items: normalizedItems,
         inputTokens: response.usage.input_tokens,
         outputTokens: response.usage.output_tokens,
       };
