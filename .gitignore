@@ -1,3 +1,10 @@
 dist/
 node_modules/
 .env
+
+_bmad-*
+_bmad
+
+.agents
+.claude
+.github
