@@ -27,6 +27,7 @@ export interface ExtractionResult {
 
 export async function extract(buffer: Buffer, mimeType: string): Promise<ExtractionResult> {
   let lastError: Error = new Error('Unknown error');
+  const base64 = buffer.toString('base64');
 
   for (let attempt = 1; attempt <= 3; attempt++) {
     const start = Date.now();
@@ -43,7 +44,7 @@ export async function extract(buffer: Buffer, mimeType: string): Promise<Extract
                 source: {
                   type: 'base64',
                   media_type: mimeType as 'image/jpeg' | 'image/png' | 'image/webp',
-                  data: buffer.toString('base64'),
+                  data: base64,
                 },
               },
               {
@@ -55,17 +56,26 @@ export async function extract(buffer: Buffer, mimeType: string): Promise<Extract
         ],
       });
 
-      const text = response.content[0].type === 'text' ? response.content[0].text.trim() : '[]';
+      const firstBlock = response.content[0];
+      const text = firstBlock?.type === 'text' ? firstBlock.text.trim() : '[]';
 
-      let raw: Array<{ name: string; quantity: number; unit: string }>;
+      let raw: unknown;
       try {
         raw = JSON.parse(text);
       } catch {
         throw new Error(`Invalid JSON from AI: ${text.slice(0, 100)}`);
       }
 
+      if (!Array.isArray(raw)) {
+        throw new Error(`AI returned non-array JSON: ${text.slice(0, 100)}`);
+      }
+
       const items: Item[] = raw.filter(
-        (i) => typeof i.name === 'string' && i.name.length >= 3,
+        (i) =>
+          typeof i.name === 'string' &&
+          i.name.length >= 3 &&
+          typeof i.quantity === 'number' &&
+          typeof i.unit === 'string',
       );
 
       if (items.length === 0) {
@@ -79,6 +89,8 @@ export async function extract(buffer: Buffer, mimeType: string): Promise<Extract
       };
     } catch (err) {
       if (err instanceof NoItemsFoundError) throw err;
+      const status = (err as { status?: number }).status;
+      if (typeof status === 'number' && status >= 400 && status < 500) throw err;
       const latencyMs = Date.now() - start;
       lastError = err as Error;
       console.warn(JSON.stringify({
