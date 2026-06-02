@@ -9,12 +9,6 @@ export default async function extractRoutes(fastify: FastifyInstance) {
   fastify.post('/extract', {
     schema: {
       consumes: ['multipart/form-data'],
-      body: {
-        type: 'object',
-        properties: {
-          image: { type: 'string', format: 'binary', description: 'Receipt image (JPEG, PNG, WEBP, max 10 MB)' },
-        },
-      },
       querystring: {
         type: 'object',
         properties: {
