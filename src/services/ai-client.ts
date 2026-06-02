@@ -113,6 +113,7 @@ export async function extract(buffer: Buffer, mimeType: string, log: Logger): Pr
           itensExtraidos: normalizedItems.length,
           tokensEntrada: response.usage.input_tokens,
           tokensSaida: response.usage.output_tokens,
+          itens: normalizedItems,
         },
         '[ai-client] extração concluída com sucesso',
       );
