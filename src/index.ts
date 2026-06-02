@@ -29,7 +29,7 @@ const fastify = Fastify({
         return { method: req.method, url: req.url, ip: req.ip };
       },
     },
-    redact: ['ANTHROPIC_API_KEY', 'req.headers.authorization'],
+    redact: ['req.headers.authorization'],
   },
 });
 
@@ -64,6 +64,10 @@ fastify.register(swaggerUi, { routePrefix: '/documentation' });
 fastify.register(extractRoutes);
 
 fastify.addHook('onResponse', (request, reply, done) => {
+  if (!request.url.startsWith('/extract')) {
+    done();
+    return;
+  }
   const ctx = request.extractContext;
   request.log.info({
     ip: request.ip,

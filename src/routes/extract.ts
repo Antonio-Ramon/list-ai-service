@@ -60,15 +60,19 @@ export default async function extractRoutes(fastify: FastifyInstance) {
       ? (rawFormat as FormatType)
       : 'asterisk';
 
+    request.extractContext = {
+      fileSizeBytes: buffer.length,
+      totalItems: 0,
+      inputTokens: 0,
+      outputTokens: 0,
+    };
+
     const { items, inputTokens, outputTokens } = await extract(buffer, mimeType);
     const text = format(items, formatType);
 
-    request.extractContext = {
-      fileSizeBytes: buffer.length,
-      totalItems: items.length,
-      inputTokens,
-      outputTokens,
-    };
+    request.extractContext.totalItems = items.length;
+    request.extractContext.inputTokens = inputTokens;
+    request.extractContext.outputTokens = outputTokens;
 
     return {
       success: true as const,
