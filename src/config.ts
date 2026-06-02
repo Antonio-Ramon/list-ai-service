@@ -3,6 +3,7 @@ export const config = {
   port: Number(process.env.PORT ?? 3000),
   maxFileSizeMb: Number(process.env.MAX_FILE_SIZE_MB ?? 10),
   nodeEnv: process.env.NODE_ENV ?? 'development',
+  logLevel: process.env.LOG_LEVEL ?? 'info',
 };
 
 if (!config.anthropicApiKey) {

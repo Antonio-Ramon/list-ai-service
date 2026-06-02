@@ -53,13 +53,23 @@ export default async function extractRoutes(fastify: FastifyInstance) {
     },
     validatorCompiler: () => () => true,
   }, async (request, _reply) => {
+    const requestStart = Date.now();
+
+    request.log.info({ ip: request.ip }, '[extract] requisição recebida');
+
     const file = await request.file();
     const { buffer, mimeType } = await validateImage(file);
 
+    const fileSizeKb = (buffer.length / 1024).toFixed(1);
     const rawFormat = (request.query as { format?: string }).format ?? 'asterisk';
     const formatType: FormatType = VALID_FORMATS.includes(rawFormat as FormatType)
       ? (rawFormat as FormatType)
       : 'asterisk';
+
+    request.log.info(
+      { tipoArquivo: mimeType, tamanho: `${fileSizeKb} KB`, formato: formatType },
+      '[extract] imagem validada, iniciando extração',
+    );
 
     request.extractContext = {
       fileSizeBytes: buffer.length,
@@ -68,12 +78,20 @@ export default async function extractRoutes(fastify: FastifyInstance) {
       outputTokens: 0,
     };
 
-    const { items, inputTokens, outputTokens } = await extract(buffer, mimeType);
+    request.log.info({ modelo: 'claude-haiku-4-5-20251001' }, '[extract] enviando imagem para a IA');
+
+    const { items, inputTokens, outputTokens } = await extract(buffer, mimeType, request.log);
     const text = format(items, formatType);
 
     request.extractContext.totalItems = items.length;
     request.extractContext.inputTokens = inputTokens;
     request.extractContext.outputTokens = outputTokens;
+
+    const totalMs = Date.now() - requestStart;
+    request.log.info(
+      { itens: items.length, tokensEntrada: inputTokens, tokensSaida: outputTokens, totalMs, formato: formatType },
+      '[extract] extração finalizada com sucesso',
+    );
 
     return {
       success: true as const,

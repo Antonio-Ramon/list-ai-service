@@ -3,6 +3,8 @@ import { config } from '../config';
 import { Item } from '../types';
 import { InternalError, NoItemsFoundError } from '../errors';
 
+const MODEL = 'claude-haiku-4-5-20251001';
+
 const client = new Anthropic({
   apiKey: config.anthropicApiKey,
   timeout: 8000,
@@ -25,22 +27,30 @@ export interface ExtractionResult {
   outputTokens: number;
 }
 
+interface Logger {
+  info(obj: Record<string, unknown>, msg: string): void;
+  warn(obj: Record<string, unknown>, msg: string): void;
+  debug(obj: Record<string, unknown>, msg: string): void;
+}
+
 // Modelos às vezes ignoram a instrução e envolvem o JSON em ```json ... ```.
-// Remove a cerca de markdown antes do parse.
 function stripCodeFences(text: string): string {
   const fenced = text.match(/^```(?:json)?\s*([\s\S]*?)\s*```$/);
   return fenced ? fenced[1].trim() : text;
 }
 
-export async function extract(buffer: Buffer, mimeType: string): Promise<ExtractionResult> {
+export async function extract(buffer: Buffer, mimeType: string, log: Logger): Promise<ExtractionResult> {
   let lastError: Error = new Error('Unknown error');
   const base64 = buffer.toString('base64');
 
   for (let attempt = 1; attempt <= 3; attempt++) {
     const start = Date.now();
+
+    log.debug({ tentativa: attempt, total: 3, modelo: MODEL }, '[ai-client] enviando requisição para a Anthropic');
+
     try {
       const response = await client.messages.create({
-        model: 'claude-haiku-4-5-20251001',
+        model: MODEL,
         max_tokens: 4096,
         messages: [
           {
@@ -63,9 +73,12 @@ export async function extract(buffer: Buffer, mimeType: string): Promise<Extract
         ],
       });
 
+      const ms = Date.now() - start;
       const firstBlock = response.content[0];
       const rawText = firstBlock?.type === 'text' ? firstBlock.text.trim() : '[]';
       const text = stripCodeFences(rawText);
+
+      log.debug({ tentativa: attempt, ms, tamanhoResposta: rawText.length }, '[ai-client] resposta recebida, interpretando JSON');
 
       let raw: unknown;
       try {
@@ -90,6 +103,17 @@ export async function extract(buffer: Buffer, mimeType: string): Promise<Extract
         throw new NoItemsFoundError('Nenhum item identificado no recibo.');
       }
 
+      log.info(
+        {
+          tentativa: attempt,
+          ms,
+          itensExtraidos: items.length,
+          tokensEntrada: response.usage.input_tokens,
+          tokensSaida: response.usage.output_tokens,
+        },
+        '[ai-client] extração concluída com sucesso',
+      );
+
       return {
         items,
         inputTokens: response.usage.input_tokens,
@@ -97,18 +121,20 @@ export async function extract(buffer: Buffer, mimeType: string): Promise<Extract
       };
     } catch (err) {
       if (err instanceof NoItemsFoundError) throw err;
+
       const status = (err as { status?: number }).status;
       if (typeof status === 'number' && status >= 400 && status < 500) throw err;
-      const latencyMs = Date.now() - start;
+
+      const ms = Date.now() - start;
       lastError = err as Error;
-      console.warn(JSON.stringify({
-        event: 'ai_extraction_failed',
-        attempt,
-        latencyMs,
-        error: lastError.message,
-      }));
+
+      log.warn(
+        { tentativa: attempt, total: 3, ms, erro: lastError.message },
+        '[ai-client] tentativa falhou, aguardando próxima tentativa',
+      );
     }
   }
 
+  log.warn({ erro: lastError.message }, '[ai-client] todas as 3 tentativas falharam, encerrando com erro');
   throw new InternalError(`Falha ao processar imagem. Tente novamente. (${lastError.message})`);
 }

@@ -20,15 +20,10 @@ declare module 'fastify' {
 
 const fastify = Fastify({
   logger: {
-    level: 'info',
+    level: config.logLevel,
     ...(config.nodeEnv !== 'production' && {
       transport: { target: 'pino-pretty' },
     }),
-    serializers: {
-      req(req: { method: string; url: string; ip: string }) {
-        return { method: req.method, url: req.url, ip: req.ip };
-      },
-    },
     redact: ['req.headers.authorization'],
   },
   disableRequestLogging: true,
@@ -73,17 +68,19 @@ fastify.addHook('onResponse', (request, reply, done) => {
     return;
   }
   const ctx = request.extractContext;
-  request.log.info({
-    ip: request.ip,
-    method: request.method,
-    url: request.url,
-    statusCode: reply.statusCode,
-    processingTimeMs: Math.round(reply.elapsedTime),
-    fileSizeBytes: ctx?.fileSizeBytes ?? 0,
-    totalItems: ctx?.totalItems ?? 0,
-    inputTokens: ctx?.inputTokens ?? 0,
-    outputTokens: ctx?.outputTokens ?? 0,
-  }, 'request completed');
+  const level = reply.statusCode >= 500 ? 'error' : reply.statusCode >= 400 ? 'warn' : 'info';
+  request.log[level](
+    {
+      ip: request.ip,
+      status: reply.statusCode,
+      totalMs: Math.round(reply.elapsedTime),
+      fileSizeBytes: ctx?.fileSizeBytes ?? 0,
+      totalItems: ctx?.totalItems ?? 0,
+      inputTokens: ctx?.inputTokens ?? 0,
+      outputTokens: ctx?.outputTokens ?? 0,
+    },
+    '[extract] requisição encerrada',
+  );
   done();
 });
 
