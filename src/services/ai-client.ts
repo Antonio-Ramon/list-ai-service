@@ -127,19 +127,38 @@ export async function extract(buffer: Buffer, mimeType: string, log: Logger): Pr
     } catch (err) {
       if (err instanceof NoItemsFoundError) throw err;
 
-      const status = (err as { status?: number }).status;
-      if (typeof status === 'number' && status >= 400 && status < 500) throw err;
-
       const ms = Date.now() - start;
-      lastError = err as Error;
+      const apiErr = err as { status?: number; error?: { type?: string; message?: string }; name?: string };
+      const status = apiErr.status;
+      const errorContext = {
+        tentativa: attempt,
+        total: 3,
+        ms,
+        erro: (err as Error).message,
+        ...(status !== undefined && { statusHttp: status }),
+        ...(apiErr.error?.type && { tipoErro: apiErr.error.type }),
+        ...(apiErr.name && { classe: apiErr.name }),
+      };
 
-      log.warn(
-        { tentativa: attempt, total: 3, ms, erro: lastError.message },
-        '[ai-client] tentativa falhou, aguardando próxima tentativa',
-      );
+      if (typeof status === 'number' && status >= 400 && status < 500) {
+        log.warn(errorContext, '[ai-client] erro 4xx da IA, não será reprocessado');
+        throw err;
+      }
+
+      lastError = err as Error;
+      log.warn(errorContext, '[ai-client] tentativa falhou, aguardando próxima tentativa');
     }
   }
 
-  log.warn({ erro: lastError.message }, '[ai-client] todas as 3 tentativas falharam, encerrando com erro');
+  const finalApiErr = lastError as unknown as { status?: number; error?: { type?: string }; name?: string };
+  log.warn(
+    {
+      erro: lastError.message,
+      ...(finalApiErr.status !== undefined && { statusHttp: finalApiErr.status }),
+      ...(finalApiErr.error?.type && { tipoErro: finalApiErr.error.type }),
+      ...(finalApiErr.name && { classe: finalApiErr.name }),
+    },
+    '[ai-client] todas as 3 tentativas falharam, encerrando com erro',
+  );
   throw new InternalError(`Falha ao processar imagem. Tente novamente. (${lastError.message})`);
 }
