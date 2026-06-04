@@ -4,7 +4,7 @@ import { Item } from '../types';
 import { InternalError, NoItemsFoundError } from '../errors';
 import { normalizeItems } from './normalizer';
 
-const MODEL = 'claude-sonnet-4-6';
+const MODEL = 'claude-haiku-4-5-20251001';
 
 const client = new Anthropic({
   apiKey: config.anthropicApiKey,
