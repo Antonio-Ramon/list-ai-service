@@ -14,12 +14,13 @@ const client = new Anthropic({
 const PROMPT = `Analise esta imagem de recibo de supermercado e extraia todos os produtos comprados.
 
 Retorne EXCLUSIVAMENTE um array JSON válido neste formato, sem markdown, sem texto adicional:
-[{"name":"nome do produto","quantity":1,"unit":"un"}]
+[{"name":"nome do produto","quantity":1,"unit":"un","price":2.50}]
 
 Regras:
 - name: nome completo e legível em português — expanda abreviações típicas de recibo de supermercado (ex: "Ouu" → "Ovos", "Feij" → "Feijão", "Arr" → "Arroz", "Leit" → "Leite", "Sab" → "Sabonete", "Det" → "Detergente"); preserve marca e especificações visíveis (tamanho, peso, cor); não invente dados que não estejam no recibo
 - quantity: número (use ponto para decimal, ex: 1.5)
 - unit: unidade de medida (un, kg, g, L, ml, cx, pct, dz)
+- price: preço unitário do produto em reais (use ponto para decimal, ex: 2.50); se não estiver visível no recibo, omita o campo
 - Se não encontrar itens, retorne: []`;
 
 export interface ExtractionResult {

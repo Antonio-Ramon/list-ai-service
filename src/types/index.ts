@@ -9,6 +9,7 @@ export interface Item {
   name: string;
   quantity: number;
   unit: string;
+  price?: number;
 }
 
 export interface ExtractResponse {

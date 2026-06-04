@@ -3,7 +3,7 @@ import { validateImage } from '../middleware/image-validator';
 import { extract } from '../services/ai-client';
 import { format, FormatType } from '../services/formatter';
 
-const VALID_FORMATS: FormatType[] = ['asterisk', 'checklist'];
+const VALID_FORMATS: FormatType[] = ['asterisk', 'checklist', 'simple', 'excel'];
 
 export default async function extractRoutes(fastify: FastifyInstance) {
   fastify.post('/extract', {
@@ -18,7 +18,7 @@ export default async function extractRoutes(fastify: FastifyInstance) {
       querystring: {
         type: 'object',
         properties: {
-          format: { type: 'string', enum: ['asterisk', 'checklist'], default: 'asterisk' },
+          format: { type: 'string', enum: ['asterisk', 'checklist', 'simple', 'excel'], default: 'asterisk' },
         },
       },
       response: {
@@ -35,6 +35,7 @@ export default async function extractRoutes(fastify: FastifyInstance) {
                   name: { type: 'string' },
                   quantity: { type: 'number' },
                   unit: { type: 'string' },
+                  price: { type: 'number' },
                 },
               },
             },
