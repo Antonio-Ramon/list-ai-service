@@ -8,7 +8,8 @@ const MODEL = 'claude-haiku-4-5-20251001';
 
 const client = new Anthropic({
   apiKey: config.anthropicApiKey,
-  timeout: 8000,
+  timeout: 60000,
+  maxRetries: 0,
 });
 
 const PROMPT = `Analise esta imagem de recibo de supermercado e extraia todos os produtos comprados.

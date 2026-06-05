@@ -40,6 +40,7 @@ export default async function extractRoutes(fastify: FastifyInstance) {
               },
             },
             total_items: { type: 'number' },
+            elapsed_seconds: { type: 'number' },
           },
         },
         400: {
@@ -99,6 +100,7 @@ export default async function extractRoutes(fastify: FastifyInstance) {
       text,
       items,
       total_items: items.length,
+      elapsed_seconds: parseFloat((totalMs / 1000).toFixed(1)),
     };
   });
 }
