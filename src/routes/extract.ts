@@ -2,6 +2,7 @@ import { FastifyInstance } from 'fastify';
 import { validateImage } from '../middleware/image-validator';
 import { extract } from '../services/ai-client';
 import { format, FormatType } from '../services/formatter';
+import { saveExtraction } from '../services/db';
 
 const VALID_FORMATS: FormatType[] = ['asterisk', 'checklist', 'simple', 'excel'];
 
@@ -90,9 +91,25 @@ export default async function extractRoutes(fastify: FastifyInstance) {
     request.extractContext.outputTokens = outputTokens;
 
     const totalMs = Date.now() - requestStart;
+    const elapsedSeconds = parseFloat((totalMs / 1000).toFixed(1));
+
     request.log.info(
       { itens: items.length, tokensEntrada: inputTokens, tokensSaida: outputTokens, totalMs, formato: formatType },
-      '[extract] extração finalizada com sucesso',
+      '[extract] extração finalizada, persistindo no banco',
+    );
+
+    // Gravação crítica: se falhar, a requisição falha (PersistenceError → 500).
+    await saveExtraction(
+      {
+        rawText: text,
+        format: formatType,
+        elapsedSeconds,
+        fileSizeBytes: buffer.length,
+        inputTokens,
+        outputTokens,
+        items,
+      },
+      request.log,
     );
 
     return {
@@ -100,7 +117,7 @@ export default async function extractRoutes(fastify: FastifyInstance) {
       text,
       items,
       total_items: items.length,
-      elapsed_seconds: parseFloat((totalMs / 1000).toFixed(1)),
+      elapsed_seconds: elapsedSeconds,
     };
   });
 }
