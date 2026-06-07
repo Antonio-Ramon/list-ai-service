@@ -6,6 +6,7 @@ import swagger from '@fastify/swagger';
 import swaggerUi from '@fastify/swagger-ui';
 import { config } from './config';
 import extractRoutes from './routes/extract';
+import historyRoutes from './routes/history';
 
 declare module 'fastify' {
   interface FastifyRequest {
@@ -61,6 +62,7 @@ fastify.register(swagger, {
 fastify.register(swaggerUi, { routePrefix: '/documentation' });
 
 fastify.register(extractRoutes);
+fastify.register(historyRoutes);
 
 fastify.addHook('onResponse', (request, reply, done) => {
   if (!request.url.startsWith('/extract')) {

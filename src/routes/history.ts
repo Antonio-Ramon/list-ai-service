@@ -1,0 +1,78 @@
+import { FastifyInstance } from 'fastify';
+import { getHistory } from '../services/db';
+
+const DEFAULT_LIMIT = 20;
+const MAX_LIMIT = 100;
+
+export default async function historyRoutes(fastify: FastifyInstance) {
+  fastify.get('/history', {
+    schema: {
+      querystring: {
+        type: 'object',
+        properties: {
+          limit: { type: 'integer', minimum: 1, maximum: MAX_LIMIT, default: DEFAULT_LIMIT },
+          offset: { type: 'integer', minimum: 0, default: 0 },
+        },
+      },
+      response: {
+        200: {
+          type: 'object',
+          properties: {
+            success: { type: 'boolean' },
+            count: { type: 'integer' },
+            total: { type: 'integer' },
+            limit: { type: 'integer' },
+            offset: { type: 'integer' },
+            history: {
+              type: 'array',
+              items: {
+                type: 'object',
+                properties: {
+                  id: { type: 'string' },
+                  created_at: { type: 'string' },
+                  raw_text: { type: 'string' },
+                  total_items: { type: 'integer' },
+                  format: { type: 'string' },
+                  elapsed_seconds: { type: 'number' },
+                  file_size_bytes: { type: 'integer' },
+                  input_tokens: { type: 'integer' },
+                  output_tokens: { type: 'integer' },
+                  user_id: { type: ['string', 'null'] },
+                  extraction_items: {
+                    type: 'array',
+                    items: {
+                      type: 'object',
+                      properties: {
+                        id: { type: 'string' },
+                        position: { type: 'integer' },
+                        name: { type: 'string' },
+                        quantity: { type: 'number' },
+                        unit: { type: 'string' },
+                        price: { type: ['number', 'null'] },
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+    },
+  }, async (request, _reply) => {
+    const { limit = DEFAULT_LIMIT, offset = 0 } = request.query as { limit?: number; offset?: number };
+
+    request.log.info({ ip: request.ip, limit, offset }, '[history] requisição recebida');
+
+    const { rows, total } = await getHistory(limit, offset, request.log);
+
+    return {
+      success: true as const,
+      count: rows.length,
+      total,
+      limit,
+      offset,
+      history: rows,
+    };
+  });
+}

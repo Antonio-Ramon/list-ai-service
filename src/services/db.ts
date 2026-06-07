@@ -43,3 +43,27 @@ export async function saveExtraction(input: SaveExtractionInput, log: Logger): P
   log.info({ extractionId, itens: input.items.length }, '[db] extração gravada com sucesso');
   return extractionId;
 }
+
+export interface HistoryResult {
+  rows: unknown[];
+  total: number;
+}
+
+// Lista extrações (mais recentes primeiro) com itens embutidos + total geral da tabela.
+export async function getHistory(limit: number, offset: number, log: Logger): Promise<HistoryResult> {
+  const { data, error, count } = await supabase
+    .from('extractions')
+    .select('*, extraction_items(*)', { count: 'exact' })
+    .order('created_at', { ascending: false })
+    .order('position', { ascending: true, referencedTable: 'extraction_items' })
+    .range(offset, offset + limit - 1);
+
+  if (error) {
+    log.error({ erro: error.message, codigo: error.code, detalhe: error.details }, '[db] falha ao buscar histórico');
+    throw new PersistenceError(`Falha ao buscar histórico. (${error.message})`);
+  }
+
+  const total = count ?? 0;
+  log.info({ retornados: data.length, total, limit, offset }, '[db] histórico consultado');
+  return { rows: data, total };
+}
