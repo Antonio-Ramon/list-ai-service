@@ -33,7 +33,10 @@ const fastify = Fastify({
 fastify.decorateRequest('extractContext', null);
 
 // cors → rate-limit → multipart → swagger → swagger-ui → routes → hook → error handler
-fastify.register(cors, { origin: '*' });
+fastify.register(cors, {
+  origin: config.corsOrigins,
+  methods: ['GET', 'POST', 'DELETE', 'OPTIONS'],
+});
 
 fastify.register(rateLimit, {
   max: 10,

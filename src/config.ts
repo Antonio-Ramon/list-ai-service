@@ -6,6 +6,10 @@ export const config = {
   logLevel: process.env.LOG_LEVEL ?? 'info',
   supabaseUrl: process.env.SUPABASE_URL!,
   supabaseServiceRoleKey: process.env.SUPABASE_SERVICE_ROLE_KEY!,
+  corsOrigins: (process.env.CORS_ORIGINS ?? 'http://localhost:4200')
+    .split(',')
+    .map((o) => o.trim())
+    .filter(Boolean),
 };
 
 if (!config.anthropicApiKey) {
