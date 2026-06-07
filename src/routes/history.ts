@@ -12,6 +12,8 @@ export default async function historyRoutes(fastify: FastifyInstance) {
         properties: {
           limit: { type: 'integer', minimum: 1, maximum: MAX_LIMIT, default: DEFAULT_LIMIT },
           offset: { type: 'integer', minimum: 0, default: 0 },
+          format: { type: 'string', enum: ['asterisk', 'checklist', 'simple', 'excel'] },
+          filter: { type: 'string', minLength: 1, description: 'Filtra por title (nome do arquivo), case-insensitive' },
         },
       },
       response: {
@@ -30,6 +32,7 @@ export default async function historyRoutes(fastify: FastifyInstance) {
                 properties: {
                   id: { type: 'string' },
                   created_at: { type: 'string' },
+                  title: { type: ['string', 'null'] },
                   raw_text: { type: 'string' },
                   total_items: { type: 'integer' },
                   format: { type: 'string' },
@@ -60,11 +63,16 @@ export default async function historyRoutes(fastify: FastifyInstance) {
       },
     },
   }, async (request, _reply) => {
-    const { limit = DEFAULT_LIMIT, offset = 0 } = request.query as { limit?: number; offset?: number };
+    const { limit = DEFAULT_LIMIT, offset = 0, format, filter } = request.query as {
+      limit?: number;
+      offset?: number;
+      format?: string;
+      filter?: string;
+    };
 
-    request.log.info({ ip: request.ip, limit, offset }, '[history] requisição recebida');
+    request.log.info({ ip: request.ip, limit, offset, format, filter }, '[history] requisição recebida');
 
-    const { rows, total } = await getHistory(limit, offset, request.log);
+    const { rows, total } = await getHistory({ limit, offset, format, title: filter }, request.log);
 
     return {
       success: true as const,

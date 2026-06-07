@@ -61,7 +61,7 @@ export default async function extractRoutes(fastify: FastifyInstance) {
     request.log.info({ ip: request.ip }, '[extract] requisição recebida');
 
     const file = await request.file();
-    const { buffer, mimeType } = await validateImage(file);
+    const { buffer, mimeType, fileName } = await validateImage(file);
 
     const fileSizeKb = (buffer.length / 1024).toFixed(1);
     const rawFormat = (request.query as { format?: string }).format ?? 'asterisk';
@@ -102,6 +102,7 @@ export default async function extractRoutes(fastify: FastifyInstance) {
     await saveExtraction(
       {
         rawText: text,
+        title: fileName,
         format: formatType,
         elapsedSeconds,
         fileSizeBytes: buffer.length,

@@ -7,6 +7,7 @@ const ALLOWED_MIME_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
 export interface ValidatedImage {
   buffer: Buffer;
   mimeType: string;
+  fileName: string;
 }
 
 export async function validateImage(file: MultipartFile | undefined): Promise<ValidatedImage> {
@@ -20,5 +21,5 @@ export async function validateImage(file: MultipartFile | undefined): Promise<Va
   if (buffer.length > config.maxFileSizeMb * 1024 * 1024) {
     throw new FileTooLargeError('Arquivo muito grande. O tamanho máximo é 10 MB.');
   }
-  return { buffer, mimeType: file.mimetype };
+  return { buffer, mimeType: file.mimetype, fileName: file.filename };
 }

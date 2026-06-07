@@ -14,6 +14,7 @@ interface Logger {
 
 export interface SaveExtractionInput {
   rawText: string;
+  title: string;
   format: string;
   elapsedSeconds: number;
   fileSizeBytes: number;
@@ -26,6 +27,7 @@ export interface SaveExtractionInput {
 export async function saveExtraction(input: SaveExtractionInput, log: Logger): Promise<string> {
   const { data, error } = await supabase.rpc('save_extraction', {
     p_raw_text: input.rawText,
+    p_title: input.title,
     p_format: input.format,
     p_elapsed_seconds: input.elapsedSeconds,
     p_file_size_bytes: input.fileSizeBytes,
@@ -49,14 +51,27 @@ export interface HistoryResult {
   total: number;
 }
 
-// Lista extrações (mais recentes primeiro) com itens embutidos + total geral da tabela.
-export async function getHistory(limit: number, offset: number, log: Logger): Promise<HistoryResult> {
-  const { data, error, count } = await supabase
+export interface HistoryFilters {
+  limit: number;
+  offset: number;
+  format?: string;
+  title?: string;
+}
+
+// Lista extrações (mais recentes primeiro) com itens embutidos + total geral (já filtrado).
+export async function getHistory(filters: HistoryFilters, log: Logger): Promise<HistoryResult> {
+  const { limit, offset, format, title } = filters;
+
+  let query = supabase
     .from('extractions')
     .select('*, extraction_items(*)', { count: 'exact' })
     .order('created_at', { ascending: false })
-    .order('position', { ascending: true, referencedTable: 'extraction_items' })
-    .range(offset, offset + limit - 1);
+    .order('position', { ascending: true, referencedTable: 'extraction_items' });
+
+  if (format) query = query.eq('format', format);
+  if (title) query = query.ilike('title', `%${title}%`);
+
+  const { data, error, count } = await query.range(offset, offset + limit - 1);
 
   if (error) {
     log.error({ erro: error.message, codigo: error.code, detalhe: error.details }, '[db] falha ao buscar histórico');
@@ -64,7 +79,7 @@ export async function getHistory(limit: number, offset: number, log: Logger): Pr
   }
 
   const total = count ?? 0;
-  log.info({ retornados: data.length, total, limit, offset }, '[db] histórico consultado');
+  log.info({ retornados: data.length, total, limit, offset, format, title }, '[db] histórico consultado');
   return { rows: data, total };
 }
 
