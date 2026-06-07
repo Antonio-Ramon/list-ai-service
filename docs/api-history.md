@@ -12,12 +12,15 @@ Base URL (produção): `https://list-ai-service-production.up.railway.app`
 
 ## Query params
 
-| Param    | Tipo | Default | Limites      | Descrição                          |
-|----------|------|---------|--------------|------------------------------------|
-| `limit`  | int  | `20`    | 1 – 100      | Quantos registros retornar         |
-| `offset` | int  | `0`     | ≥ 0          | Quantos pular (paginação)          |
+| Param    | Tipo   | Default | Limites/Valores                          | Descrição                                      |
+|----------|--------|---------|------------------------------------------|------------------------------------------------|
+| `limit`  | int    | `20`    | 1 – 100                                  | Quantos registros retornar                     |
+| `offset` | int    | `0`     | ≥ 0                                      | Quantos pular (paginação)                      |
+| `format` | string | —       | `asterisk` `checklist` `simple` `excel`  | Filtra pelo tipo de lista                      |
+| `filter` | string | —       | min 1 char                               | Filtra por `title` (nome do arquivo), case-insensitive, busca parcial |
 
-> Valores fora dos limites retornam **400** (validação automática).
+> Valores fora dos limites/enum retornam **400** (validação automática).
+> Os filtros são combináveis: `?format=excel&filter=atacadao`. O `total` reflete o resultado **já filtrado**.
 
 ## Resposta `200`
 
@@ -32,6 +35,7 @@ Base URL (produção): `https://list-ai-service-production.up.railway.app`
     {
       "id": "uuid",
       "created_at": "2026-06-06T23:22:02.000Z",
+      "title": "nota-extra-15-jun.jpg",
       "raw_text": "lista formatada retornada na extração",
       "total_items": 3,
       "format": "asterisk",
@@ -58,6 +62,7 @@ Base URL (produção): `https://list-ai-service-production.up.railway.app`
 | `limit`   | Limite aplicado                                        |
 | `offset`  | Offset aplicado                                        |
 | `history` | Array de extrações, ordenado por `created_at desc`     |
+| `title`   | Nome da lista — por padrão o nome do arquivo enviado    |
 
 `extraction_items` vem ordenado por `position` (mesma ordem da extração). `price` é `null` quando não foi identificado.
 
