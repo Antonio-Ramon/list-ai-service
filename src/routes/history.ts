@@ -1,5 +1,5 @@
 import { FastifyInstance } from 'fastify';
-import { getHistory } from '../services/db';
+import { getHistory, deleteExtraction } from '../services/db';
 
 const DEFAULT_LIMIT = 20;
 const MAX_LIMIT = 100;
@@ -74,5 +74,37 @@ export default async function historyRoutes(fastify: FastifyInstance) {
       offset,
       history: rows,
     };
+  });
+
+  fastify.delete('/history/:id', {
+    schema: {
+      params: {
+        type: 'object',
+        required: ['id'],
+        properties: {
+          id: {
+            type: 'string',
+            pattern: '^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$',
+          },
+        },
+      },
+      response: {
+        200: {
+          type: 'object',
+          properties: {
+            success: { type: 'boolean' },
+            id: { type: 'string' },
+          },
+        },
+      },
+    },
+  }, async (request, _reply) => {
+    const { id } = request.params as { id: string };
+
+    request.log.info({ ip: request.ip, id }, '[history] requisição de delete recebida');
+
+    await deleteExtraction(id, request.log);
+
+    return { success: true as const, id };
   });
 }

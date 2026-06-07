@@ -88,3 +88,44 @@ async function fetchHistory(limit = 20, offset = 0) {
 |--------|-------------------------------------------------------------|------------------------------|
 | `400`  | `{ success:false, error, message }`                          | `limit`/`offset` inválidos   |
 | `500`  | `{ success:false, error:"PERSISTENCE_ERROR", message }`      | Falha ao consultar o banco   |
+
+---
+
+# API — `DELETE /history/:id`
+
+Deleta uma extração pelo `id`. Os itens associados são removidos automaticamente (cascade).
+
+## Endpoint
+
+```
+DELETE /history/:id
+```
+
+`:id` deve ser um UUID válido.
+
+## Resposta `200`
+
+```json
+{
+  "success": true,
+  "id": "123e4567-e89b-12d3-a456-426614174000"
+}
+```
+
+## Exemplo (fetch)
+
+```ts
+async function deleteExtraction(id: string) {
+  const res = await fetch(`${BASE_URL}/history/${id}`, { method: 'DELETE' });
+  if (!res.ok) throw new Error(`delete failed: ${res.status}`);
+  return res.json();
+}
+```
+
+## Erros
+
+| Status | Body                                                    | Quando                         |
+|--------|--------------------------------------------------------|--------------------------------|
+| `400`  | `{ success:false, error, message }`                     | `id` não é um UUID válido      |
+| `404`  | `{ success:false, error:"NOT_FOUND", message }`         | Não existe extração com esse id|
+| `500`  | `{ success:false, error:"PERSISTENCE_ERROR", message }` | Falha ao deletar no banco      |

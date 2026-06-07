@@ -1,7 +1,7 @@
 import { createClient } from '@supabase/supabase-js';
 import { config } from '../config';
 import { Item } from '../types';
-import { PersistenceError } from '../errors';
+import { PersistenceError, NotFoundError } from '../errors';
 
 const supabase = createClient(config.supabaseUrl, config.supabaseServiceRoleKey, {
   auth: { persistSession: false },
@@ -66,4 +66,25 @@ export async function getHistory(limit: number, offset: number, log: Logger): Pr
   const total = count ?? 0;
   log.info({ retornados: data.length, total, limit, offset }, '[db] histórico consultado');
   return { rows: data, total };
+}
+
+// Deleta uma extração por id (itens caem via ON DELETE CASCADE). Lança NotFoundError se não existir.
+export async function deleteExtraction(id: string, log: Logger): Promise<void> {
+  const { data, error } = await supabase
+    .from('extractions')
+    .delete()
+    .eq('id', id)
+    .select('id');
+
+  if (error) {
+    log.error({ erro: error.message, codigo: error.code, detalhe: error.details }, '[db] falha ao deletar extração');
+    throw new PersistenceError(`Falha ao deletar extração. (${error.message})`);
+  }
+
+  if (data.length === 0) {
+    log.info({ id }, '[db] extração não encontrada para deletar');
+    throw new NotFoundError('Extração não encontrada.');
+  }
+
+  log.info({ id }, '[db] extração deletada com sucesso');
 }
