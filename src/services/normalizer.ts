@@ -126,9 +126,3 @@ export function normalizeName(name: string): string {
 
   return result.split(/\s+/).map(normalizeToken).join(' ');
 }
-
-export function normalizeItems(items: Item[]): Item[] {
-  return items
-    .map((item) => ({ ...item, name: normalizeName(item.name) }))
-    .sort((a, b) => a.name.localeCompare(b.name, 'pt-BR', { sensitivity: 'base' }));
-}

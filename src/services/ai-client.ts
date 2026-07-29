@@ -2,7 +2,6 @@ import Anthropic from '@anthropic-ai/sdk';
 import { config } from '../config';
 import { Item } from '../types';
 import { InternalError, NoItemsFoundError } from '../errors';
-import { normalizeItems } from './normalizer';
 
 const MODEL = 'claude-haiku-4-5-20251001';
 
@@ -94,34 +93,46 @@ export async function extract(buffer: Buffer, mimeType: string, log: Logger): Pr
         throw new Error(`AI returned non-array JSON: ${text.slice(0, 100)}`);
       }
 
-      const items: Item[] = raw.filter(
-        (i) =>
-          typeof i.name === 'string' &&
-          i.name.length >= 3 &&
-          typeof i.quantity === 'number' &&
-          typeof i.unit === 'string',
-      );
+      const items: Item[] = (raw as Record<string, unknown>[])
+        .filter(
+          (i) =>
+            typeof i.name === 'string' &&
+            i.name.length >= 3 &&
+            typeof i.quantity === 'number' &&
+            typeof i.unit === 'string',
+        )
+        .map((i) => {
+          const item: Item = {
+            name: i.name as string,
+            quantity: i.quantity as number,
+            unit: i.unit as string,
+          };
+
+          if (typeof i.price === 'number') {
+            item.price = Number(((i.quantity as number) * i.price).toFixed(2));
+          }
+
+          return item;
+        });
 
       if (items.length === 0) {
         throw new NoItemsFoundError('Nenhum item identificado no recibo.');
       }
 
-      const normalizedItems = normalizeItems(items);
-
       log.info(
         {
           tentativa: attempt,
           ms,
-          itensExtraidos: normalizedItems.length,
+          itensExtraidos: items.length,
           tokensEntrada: response.usage.input_tokens,
           tokensSaida: response.usage.output_tokens,
-          itens: normalizedItems,
+          itens: items,
         },
         '[ai-client] extração concluída com sucesso',
       );
 
       return {
-        items: normalizedItems,
+        items,
         inputTokens: response.usage.input_tokens,
         outputTokens: response.usage.output_tokens,
       };
