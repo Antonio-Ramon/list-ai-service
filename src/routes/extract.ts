@@ -1,6 +1,6 @@
 import { FastifyInstance } from 'fastify';
 import { validateImage } from '../middleware/image-validator';
-import { extract } from '../services/ai-client';
+import { extract, MODEL } from '../services/ai-client';
 import { format, FormatType } from '../services/formatter';
 import { saveExtraction } from '../services/db';
 
@@ -81,7 +81,7 @@ export default async function extractRoutes(fastify: FastifyInstance) {
       outputTokens: 0,
     };
 
-    request.log.info({ modelo: 'claude-haiku-4-5-20251001' }, '[extract] enviando imagem para a IA');
+    request.log.info({ modelo: MODEL }, '[extract] enviando imagem para a IA');
 
     const { items, inputTokens, outputTokens } = await extract(buffer, mimeType, request.log);
     const text = format(items, formatType);

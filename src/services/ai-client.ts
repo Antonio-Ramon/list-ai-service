@@ -3,11 +3,11 @@ import { config } from '../config';
 import { Item } from '../types';
 import { InternalError, NoItemsFoundError } from '../errors';
 
-const MODEL = 'claude-haiku-4-5-20251001';
+export const MODEL = 'claude-opus-5';
 
 const client = new Anthropic({
   apiKey: config.anthropicApiKey,
-  timeout: 60000,
+  timeout: 120000,
   maxRetries: 0,
 });
 
@@ -53,7 +53,8 @@ export async function extract(buffer: Buffer, mimeType: string, log: Logger): Pr
     try {
       const response = await client.messages.create({
         model: MODEL,
-        max_tokens: 4096,
+        max_tokens: 16000,
+        output_config: { effort: 'low' },
         messages: [
           {
             role: 'user',
